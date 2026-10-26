@@ -1,0 +1,21 @@
+{
+  "name": "broken-link-checker",
+  "version": "1.0.0",
+  "description": "Puppeteer-based broken link checker for websites and single-page web apps, with HTML/JSON/JUnit reports for Azure Pipelines.",
+  "main": "src/index.js",
+  "bin": {
+    "broken-link-checker": "src/cli.js"
+  },
+  "scripts": {
+    "check": "node src/cli.js",
+    "test": "node test/run-tests.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "puppeteer": "^25.16.0"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}

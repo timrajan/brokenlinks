@@ -1,0 +1,76 @@
+# Broken link check (Puppeteer).
+# Run it manually: Pipelines > this pipeline > Run pipeline, then fill in the four boxes.
+# Nothing is hard-coded: the boxes start empty, and the check refuses to run if one is left blank.
+trigger: none
+
+parameters:
+  - name: url
+    displayName: 'Start URL (page to start checking from)'
+    type: string
+    default: ''
+  - name: depth
+    displayName: 'Depth: how many clicks deep to follow links (0 = start page only)'
+    type: string
+    default: ''
+  - name: maxBroken
+    displayName: 'Max broken links: stop the check once this many are found'
+    type: string
+    default: ''
+  - name: timeoutSec
+    displayName: 'Timeout in seconds: a page or link slower than this fails'
+    type: string
+    default: ''
+
+pool:
+  vmImage: 'ubuntu-latest'        # self-hosted agent instead:  name: 'YourPoolName'
+
+variables:
+  REPORT_DIR: '$(Build.ArtifactStagingDirectory)/link-report'
+
+steps:
+  - checkout: self
+
+  - task: UseNode@1
+    displayName: 'Use Node 20'
+    inputs:
+      version: '20.x'
+
+  # Installs Puppeteer and the Chrome it drives (~150 MB download, cached per agent).
+  # To use a Chrome already installed on the agent instead, add to this step:
+  #   env:
+  #     PUPPETEER_SKIP_DOWNLOAD: 'true'
+  # and to the check step:  CHROME_PATH: '/usr/bin/google-chrome'  (or your chrome.exe / msedge.exe path)
+  - script: npm ci
+    displayName: 'Install dependencies'
+
+  - script: node src/cli.js --out "$(REPORT_DIR)" --fail-on-broken
+    displayName: 'Check for broken links'
+    env:
+      # The four run-time inputs, passed straight from the Run pipeline form
+      LINKCHECK_URL: ${{ parameters.url }}
+      LINKCHECK_DEPTH: ${{ parameters.depth }}
+      LINKCHECK_MAX_BROKEN: ${{ parameters.maxBroken }}
+      LINKCHECK_TIMEOUT_SEC: ${{ parameters.timeoutSec }}
+      # If the app needs a login, add a config file (see README) and secret variables, e.g.:
+      #   APP_USER: $(AppUser)
+      #   APP_PASSWORD: $(AppPassword)      <- mark as secret in the pipeline's Variables
+      # and change the script line to: node src/cli.js --config link-checker.config.json --out "$(REPORT_DIR)" --fail-on-broken
+
+  # Each link becomes a test result: broken = failed, unverified = skipped (Tests tab of the run)
+  - task: PublishTestResults@2
+    displayName: 'Publish link results to Tests tab'
+    condition: always()
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '$(REPORT_DIR)/junit.xml'
+      testRunTitle: 'Broken links - ${{ parameters.url }}'
+      failTaskOnFailedTests: false
+      failTaskOnMissingResultsFile: false
+
+  # report.html (open in a browser), report.json and screenshots of broken pages
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish link report'
+    condition: always()
+    inputs:
+      targetPath: '$(REPORT_DIR)'
+      artifact: 'link-report'

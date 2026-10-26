@@ -1,0 +1,22 @@
+{
+  "_comment": "Optional settings. Copy to link-checker.config.json and pass --config link-checker.config.json. The four run-time inputs (url, depth, maxBroken, timeoutSec) are NOT set here - they come from the pipeline. ${NAME} is replaced with environment variable NAME.",
+
+  "maxPages": 500,
+  "concurrency": 4,
+  "scope": "",
+  "exclude": "logout|log-out|signout|sign-out|logoff|delete|remove|destroy|unsubscribe",
+  "internalOnly": false,
+  "ignoreResourceTypes": [],
+  "settleMs": 800,
+  "screenshots": true,
+
+  "login": {
+    "url": "https://your-app.example.com/login",
+    "username": "${APP_USER}",
+    "password": "${APP_PASSWORD}",
+    "usernameSelector": "#username",
+    "passwordSelector": "#password",
+    "submitSelector": "button[type=submit]",
+    "successSelector": ""
+  }
+}
